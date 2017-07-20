@@ -1,3 +1,4 @@
+options(digits=10)
 setwd('~/dataIncubator/Q2')
 
 if(!file.exists("Data")) {
@@ -5,6 +6,10 @@ if(!file.exists("Data")) {
 }
 
 setwd('~/dataIncubator/Q2/Data')
+
+if(!file.exists("LCDataDictionary.xlsx")) {
+  download.file('https://resources.lendingclub.com/LCDataDictionary.xlsx', dest='LCDataDictionary.xlsx')
+}
 
 if(!file.exists("LoanStats3c.csv.zip")) {
   download.file('https://resources.lendingclub.com/LoanStats3c.csv.zip', dest='LoanStats3c.csv.zip')
@@ -69,27 +74,49 @@ loanData$issue_year <- sub(".*-", "", as.character(loanData$issue_d))
 loanData$issue_month <- sub("-.*", "", as.character(loanData$issue_d))
 
 
-minIntRate <- tbl_df(loanData) %>% 
-  group_by(issue_year) %>% 
-  summarize(meanInterestRate = count()) %>%
-  
-trimws(as.character(loanData$term)) == "36 months"
+tbl_df(loanData) %>% 
+  group_by(issue_year, term) %>% 
+  summarise (n = n()) %>%
+  mutate(year_freq = n / sum(n))
+# issue_year       term      n    year_freq
+# <chr>     <fctr>  <int>        <dbl>
+#  1       2014  36 months 162570 0.6899405421
+# 2       2014  60 months  73059 0.3100594579
+# 3       2015  36 months 283173 0.6724682079
+# 4       2015  60 months 137922 0.3275317921
 
+print(abs(0.6899405421 - 0.6724682079))
 
 
 ## Q5  ##
-print("We will consider all loans that are not in the 'Fully Paid', 
-      'Current', 'In Grace Period' statuses to be in default. Calculate 
-      the ratio of the time spent paying the loan, defined as the difference 
-      between the last payment date and the issue date, divided by the term 
-      of loan. What is the standard deviation of this ratio for all the 
-      loans in default?")
+cat("We will consider all loans that are not in the 'Fully Paid', 
+'Current', 'In Grace Period' statuses to be in default. Calculate 
+the ratio of the time spent paying the loan, defined as the difference 
+between the last payment date and the issue date, divided by the term 
+of loan. What is the standard deviation of this ratio for all the 
+loans in default?")
+
+as.monyear(loanData$issue_d)
+as.mon
+
+inDefaultLoanData <- subset(loanData, 
+                          !(loan_status %in% c("Fully Paid", 
+                                             "Current", 
+                                             "In Grace Period")))
+
+inDefaultLoanData$last_pymnt_d - inDefaultLoanData$issue_d
+
 
 ## Q6  ##
-print("What is the Pearson correlation coefficient between the total rate 
+cat("What is the Pearson correlation coefficient between the total rate 
 of return, as figured from the total payments and the loan amount, and 
-      the interest rate? Consider only loans that have reached the end of 
-      their term.")
+the interest rate? Consider only loans that have reached the end of 
+their term.")
+
+levels(loanData$loan_status)
+
+#cor(loanData, method="pearson")
+
 
 ## Q7  ##
 print("Let's find a loan purpose that shows up abnormally often in one 
