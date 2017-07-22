@@ -26,14 +26,13 @@ names(gameBoard) <- gameStates
 # Initialize board for first turn
 gameBoard[[paste0(rep(1, N), collapse='')]] <- 1
 
-for(i in 1:nrow()) {
-  
+
+for(stateString in names(gameBoard)) {
+  state <- as.character(strsplit(temp, '')[[1]])
   
 }
   
-  
-takeTurn <- matrix(data=0, ncol=N^M, nrow=N^M)
-
+#takeTurn <- matrix(data=0, ncol=N^M, nrow=N^M)
 
 # This is how we take turns:
 # takeTurn %*% gameBoard
