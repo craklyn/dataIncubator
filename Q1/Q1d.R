@@ -1,14 +1,16 @@
 library(dplyr)
-
+library(Hmisc)
+library('Matrix')
+options(digits=10)
 
 # M represents the number of stacks
-M <- 3
+M <- 6
 # N represents the number of disks
-N <- 3
+N <- 6
 # Total weight of all disks
 totalWeight <- sum(1:N)
 # Total number of game moves
-Tmax <- 16
+#Tmax <- 16
 
 # game states are represented as an N-long vector.  The value of 
 # each index represents the position (peg) of that disk.
@@ -30,15 +32,17 @@ names(gameBoard) <- gameStates
 gameBoard[[paste0(rep(1, N), collapse='')]] <- 1
 
 # Initialize our TakeTurn Matrix, AKA "A".
-takeTurn <- matrix(data=0, ncol=N^M, nrow=N^M)
+#takeTurn <- matrix(data=0, ncol=N^M, nrow=N^M)
+takeTurn <- Matrix(data=0, ncol=N^M, nrow=N^M, sparse=TRUE)
 
 
-for(col in 1:nrow(takeTurn)) {
-  stateString <- names(gameBoard)[row]
-  state <- as.numeric(strsplit(names(gameBoard)[row], '')[[1]])
+for(col in 1:ncol(takeTurn)) {
+  print(paste0("Now commputing column ", col, " of ", ncol(takeTurn)))
+  stateString <- names(gameBoard)[col]
+  state <- as.numeric(strsplit(names(gameBoard)[col], '')[[1]])
   
-  takeTurnRow <- rep(0, N^M)
-  names(takeTurnRow) <- gameStates
+  takeTurnCol <- rep(0, N^M)
+  names(takeTurnCol) <- gameStates
   
   newStates <- list()
   for(peg in 1:M) {
@@ -61,34 +65,76 @@ for(col in 1:nrow(takeTurn)) {
   newStates <- unlist(lapply(newStates, function(x) paste(x, collapse='')))
   newStatesTable <- table(newStates)
   for(i in 1:length(newStatesTable)) {
-    takeTurnRow[[(names(newStatesTable)[i])]] <- newStatesTable[i]
+    takeTurnCol[[(names(newStatesTable)[i])]] <- newStatesTable[i]
   }
   
-  takeTurn[,col] <- takeTurnRow
+  takeTurn[,col] <- takeTurnCol
 }
 
-A2 <- takeTurn %*% takeTurn
+A1 <- takeTurn
+
+A2 <- A1 %*% A1
+A2 <- A2 / sum(A2 %*% gameBoard)
+
 A4 <- A2 %*% A2
+A4 <- A4 / sum(A4 %*% gameBoard)
+
 A8 <- A4 %*% A4
+A8 <- A8 / sum(A8 %*% gameBoard)
+
 A16 <- A8 %*% A8
+A16 <- A16 / sum(A16 %*% gameBoard)
+
 A32 <- A16 %*% A16
+A32 <- A32 / sum(A32 %*% gameBoard)
+
 A64 <- A32 %*% A32
+A64 <- A64 / sum(A64 %*% gameBoard)
+
 A128 <- A64 %*% A64
+A128 <- A128 / sum(A128 %*% gameBoard)
+
 A256 <- A128 %*% A128
-
-# This is how we take turns:
-# takeTurn %*% gameBoard
+A256 <- A256 / sum(A256 %*% gameBoard)
 
 
+# Okay final state after T=16 turns is:
+# A16 %*% gameBoard
+# and final state after T=256 turns is:
+# A256 %*% gameBoard
+# Now we need to find the moment of each of those states.
+
+getMoment <- function(stateString) {
+  state <- as.numeric(strsplit(stateString,'')[[1]])
+
+  moment <- 0
+  for(i in 1:length(state)) {
+    # Moment from disk i is weight * position.  Position 1 has x=0, so subtract 1.
+    moment <- moment + i*(state[i]-1)
+  }
+  moment
+}
+
+getCoM <- function(stateString) {
+  getMoment(stateString) / totalWeight
+}
+
+CoMs <- sapply(names(gameBoard), getCoM)
+
+xm <- wtd.mean(CoMs, A16 %*% gameBoard)
+var <- wtd.var(CoMs, A16 %*% gameBoard)
+sd <- sqrt(var)
+
+xm
+sd
 
 
+# For M=3, N=3, T=16: 
+# > xm
+# [1] 0.7524201043
+# > sd
+# [1] 0.5444611312
 
-
-
-
-
-
-
-
+# For M=6, N=6, T=256:
 
 
