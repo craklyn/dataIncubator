@@ -8,6 +8,9 @@ options(digits=10)
 M <- 6
 # N represents the number of disks
 N <- 6
+# Tmax represents the total number of moves
+Tmax <- 256
+
 # Total weight of all disks
 totalWeight <- sum(1:N)
 
@@ -32,7 +35,7 @@ names(gameBoard) <- gameStates
 gameBoard[[paste0(rep(1L, N), collapse='')]] <- 1
 
 # Initialize our TakeTurn Matrix, AKA "A".
-#takeTurn <- matrix(data=0, ncol=N^M, nrow=N^M)
+#takeTurn <- matrix(data=0L, ncol=N^M, nrow=N^M)
 takeTurn <- Matrix(data=0L, ncol=N^M, nrow=N^M, sparse=TRUE)
 object_size(takeTurn)
 
@@ -82,23 +85,14 @@ for(col in 1:ncol(takeTurn)) {
 #A2 <- A2 / sum(A2 %*% gameBoard)
 #A4 <- A2 %*% A2
 #A4 <- A4 / sum(A4 %*% gameBoard)
-#A8 <- A4 %*% A4
-#A8 <- A8 / sum(A8 %*% gameBoard)
-#A16 <- A8 %*% A8
-#A16 <- A16 / sum(A16 %*% gameBoard)
-#A32 <- A16 %*% A16
-#A32 <- A32 / sum(A32 %*% gameBoard)
-#A64 <- A32 %*% A32
-#A64 <- A64 / sum(A64 %*% gameBoard)
-#A128 <- A64 %*% A64
-#A128 <- A128 / sum(A128 %*% gameBoard)
-#A256 <- A128 %*% A128
-#A256 <- A256 / sum(A256 %*% gameBoard)
 
-# Okay final state after T=16 turns is:
-# A16 %*% gameBoard
-# and final state after T=256 turns is:
-# A256 %*% gameBoard
+curBoard <- gameBoard
+for(i in 1:Tmax) {
+  print(paste0("Now doing i=", i, " of ", Tmax))
+  curBoard <- takeTurn %*% curBoard
+  curBoard <- curBoard / mean(curBoard)
+}
+
 # Now we need to find the moment of each of those states.
 
 getMoment <- function(stateString) {
@@ -117,22 +111,8 @@ getCoM <- function(stateString) {
 }
 
 
-# Tmax: Total number of game moves
-Tmax <- 16
-steps <- log2(Tmax)
-
-resultingMove <- takeTurn
-if(steps > 0) {
-  for(i in 1:steps) {
-    print(paste0("Now squaring the move for move #", i))
-    resultingMove <- resultingMove %*% resultingMove
-    resultingMove <- resultingMove / mean(resultingMove)
-  }
-}
-
-initialGameState <- gameBoard
-resultingBoard <- as.numeric(resultingMove %*% initialGameState)
-names(resultingBoard) <- names(initialGameState)
+resultingBoard <- as.numeric(curBoard)
+names(resultingBoard) <- names(gameBoard)
 #resultingBoard
 
 CoMs <- sapply(names(gameBoard), getCoM)
@@ -151,4 +131,8 @@ sd
 # [1] 0.3654019534
  
 # For M=6, N=6, T=256:
-
+# > xm
+# [1] 2.257060872
+# > sd
+# [1] 0.4932798946
+#
